@@ -29,7 +29,10 @@ public class Main {
      */
     private static ArrayList<Process> setup() {
         ArrayList<Process> processes = new ArrayList<>();
-        File file = new File("sample_input_sp19.txt");
+        System.out.println("Input your file name: ");
+        Scanner in = new Scanner(System.in);
+        String input = in.nextLine();
+        File file = new File(input);
         try {
             Scanner inp = new Scanner(file);
             while (inp.hasNextLine()) {

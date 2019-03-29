@@ -3,6 +3,8 @@ public class Process {
     private int arrivalTime;
     private int burstTime;
     private int timeLeft;
+    private int waitTime=0;
+    private int turnaroundTime;
 
     public Process(String name, int at, int bt){
         this.name = name;
@@ -17,7 +19,19 @@ public class Process {
     public int getTimeLeft(){
         return this.timeLeft;
     }
+    public int getWaitTime(){
+        return this.waitTime;
+    }
+    public int getTurnaroundTime(){
+        return this.turnaroundTime;
+    }
     public void decrement(){
         this.timeLeft--;
+    }
+    public void setTurnaroundTime(int tick){
+        this.turnaroundTime=tick-this.arrivalTime;
+    }
+    public void incrementWait(){
+        this.waitTime++;
     }
 }

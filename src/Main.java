@@ -1,3 +1,5 @@
+import jdk.swing.interop.SwingInterOpUtils;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
@@ -6,21 +8,21 @@ public class Main {
 
     public static void main(String[] args) {
         int quantum = 3;
-        if (args.length!=0) quantum = Integer.parseInt(args[0]);
+        if (args.length != 0) quantum = Integer.parseInt(args[0]);
         ArrayList<Process> temp = setup();
         run2(quantum, temp);
     }
 
-    private static ArrayList<Process> setup(){
+    private static ArrayList<Process> setup() {
         ArrayList<Process> processes = new ArrayList<Process>();
         File file = new File("./sample_input_sp19.txt");
         try {
             Scanner inp = new Scanner(file);
-            while(inp.hasNextLine()){
+            while (inp.hasNextLine()) {
                 String line = inp.nextLine();
-                if (line.charAt(0) != '#'){
+                if (line.charAt(0) != '#') {
                     String[] values = line.split("\t");
-                    if(values.length==3) {
+                    if (values.length == 3) {
                         Process proc = new Process(values[0], Integer.parseInt(values[1]), Integer.parseInt(values[2]));
                         processes.add(proc);
                     } else {
@@ -35,8 +37,10 @@ public class Main {
         }
         return null;
     }
-    private static void run2(int startVal, ArrayList<Process> processes) {
+
+    private static void run2(int startVal, ArrayList<Process> processesOriginal) {
         // Active queue for what's running
+        ArrayList<Process> processes = new ArrayList<Process>(processesOriginal);
         Queue<Process> queue = new LinkedList<>();
 
         Process activeProcess = null;
@@ -46,48 +50,60 @@ public class Main {
 
         // While there are still processes that haven't finished
         String line = "";
-        while(processes.size()!=0){
+        while (processes.size() != 0) {
             //check for new additions
             for (Process item : processes) {
                 if (item.getArrivalTime() == tick) {
                     queue.add(item);
                 }
             }
-            //are we running?
-            if(!active){
-                // No, nothing is running
+            //NOTHING IS CURRENTLY ACTIVE
+            if (!active) {
+
+                // THE QUEUE HAS SOMETHING FOR US
                 if (!queue.isEmpty()) {
                     activeProcess = queue.remove();
                     System.out.print(activeProcess.getName());
                     activeProcess.decrement();
-                    quantum = startVal-1;
+                    quantum = startVal - 1;
                     active = true;
-                } else {
+                }
+                // THERE IS NOTHING AVAILABLE YET. SKIP AHEAD.
+                else {
+                    System.out.print(" _ ");
                     quantum = startVal;
                 }
-            } else {
-                // Yes, we are running
-                if(activeProcess.getTimeLeft()==0){
+
+            }
+            // A PROCESS IS CURRENTLY ACTIVE
+            else {
+                // IS THE PROCESS EXPIRING?
+                if (activeProcess.getTimeLeft() == 0) {
                     active = false;
                     activeProcess.decrement();
                     System.out.print("|");
+                    activeProcess.setTurnaroundTime(tick);
                     processes.remove(activeProcess);
                     continue;
                 }
+                // THE PROCESS IS NOT EXPIRING
                 else {
-                    if(quantum==0){
+                    // TIME IS UP, GOTTA SWITCH
+                    if (quantum == 0) {
                         queue.add(activeProcess);
+                        // QUEUE IS CURRENTLY EMPTY, PLEASE HOLD FOR NEXT AVAILABLE PROCESS
                         if (((LinkedList<Process>) queue).getFirst() == null) {
                             quantum = startVal;
                         }
+                        // LOAD THE CURRENT FOREMOST ITEM IN THE QUEUE
                         else {
                             activeProcess = queue.remove();
-
-                            System.out.print("|"+activeProcess.getName()+" ");
-                            quantum = startVal-1;
+                            System.out.print("|" + activeProcess.getName() + " ");
+                            quantum = startVal - 1;
                             activeProcess.decrement();
                         }
                     }
+                    // YOU'VE STILL GOT TIME, DO YOUR THING
                     else {
                         activeProcess.decrement();
                         System.out.print(" _ ");
@@ -96,79 +112,16 @@ public class Main {
                 }
             }
             tick++;
+            for(Process item:queue){
+                item.incrementWait();
+            }
         }
         System.out.println();
-        System.out.println("Total ticks taken: "+tick);
-    }
-    private static void run(int startVal, ArrayList<Process> processes){
-        // Active queue for what's running
-        Queue<Process> queue = new LinkedList<>();
-
-        Process activeProcess = null;
-        int tick = 0;
-        int quantum = startVal;
-        boolean active = false;
-
-        // While there are still processes that haven't finished
-        String line = "";
-        while(processes.size()!=0) {
-            //check for new arrivals
-            for (Process item : processes) {
-                if (item.getArrivalTime() == tick) {
-                    queue.add(item);
-                }
-            }
-            // Is anything on the hot seat?
-            if (active) {
-                // If the active process is donezo, remove it and turn off its hold
-                if (activeProcess.getTimeLeft() == 0) {
-                    processes.remove(activeProcess);
-                    line+=("| ");
-                    active = false;
-                    quantum = startVal;
-                }
-                // If the active process is out of time, add it back to the queue
-                else if (quantum == 1){
-                    activeProcess.decrement();
-                    queue.add(activeProcess);
-                    line+=(" _| ");
-                    activeProcess = queue.remove();
-                    activeProcess.decrement();
-                    line+=(activeProcess.getName());
-                    active = true;
-                    quantum = startVal-1;
-
-                }
-                else {
-                    activeProcess.decrement();
-                    quantum--;
-                    line+=(" _ ");
-                }
-
-            }
-            // If nothing is currently running
-            else {
-                // Is the next thing ready???
-                if (((LinkedList<Process>) queue).getFirst().getArrivalTime() <= tick) {
-                    activeProcess = queue.remove();
-                    activeProcess.decrement();
-                    line+=(activeProcess.getName());
-                    active = true;
-                    quantum = startVal-1;
-                }
-
-            }
-            tick++;
+        System.out.println("Total ticks taken: " + tick);
+        for(Process item:processesOriginal){
+            System.out.print("Process "+item.getName()+"\tWait Time: "+item.getWaitTime()+"\tTurnaround Time: "+item.getTurnaroundTime());
+            System.out.println();
         }
-        System.out.println();
-        System.out.println(line);
-        System.out.println("Total ticks taken originally: "+tick);
-//        tick = 0;
-//        for(int i = 0; i<line.length();i++){
-//            if(line.charAt(i)=='_')tick++;
-//        }
-//        System.out.println(line);
-//        System.out.println("Total ticks taken: "+tick);
+
     }
 }
-

@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="crcrowe0Scheduler:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/crcrowe0Scheduler_jar</output-path>
+    <root id="archive" name="crcrowe0Scheduler.jar">
+      <element id="module-output" name="crcrowe0Scheduler" />
+    </root>
+  </artifact>
+</component>
